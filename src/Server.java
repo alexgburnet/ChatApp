@@ -21,19 +21,19 @@ public class Server implements Runnable{
     @Override
     public void run() {
         try {
+            server = new ServerSocket(9999);
+            pool = Executors.newCachedThreadPool();
             while(!done) {
-                server = new ServerSocket(9999);
-                pool = Executors.newCachedThreadPool();
                 Socket client = server.accept();
                 ConnectionHandler handler = new ConnectionHandler(client);
                 connections.add(handler);
                 pool.execute(handler);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             shutdown();
         }
-
     }
+
 
     public void broadcast(String message) {
         for (ConnectionHandler ch : connections) {
@@ -108,20 +108,26 @@ public class Server implements Runnable{
 
         public void shutdown() {
             try {
-                in.close();
-                out.close();
-                if (!client.isClosed()) {
+                if (in != null) {
+                    in.close();
+                }
+                if (out != null) {
+                    out.close();
+                }
+                if (client != null && !client.isClosed()) {
                     client.close();
                 }
             } catch (IOException e) {
-                //ignore
+                // Ignore
             }
         }
+
 
     }
 
     public static void main(String[] args) {
         Server server = new Server();
-        server.run();
+        Thread serverThread = new Thread(server);
+        serverThread.start();
     }
 }
